@@ -1,4 +1,4 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import { 
     Plus, 
@@ -73,8 +73,25 @@ interface MovementData {
     created_at: string;
 }
 
+interface PaginationLink {
+    url: string | null;
+    label: string;
+    active: boolean;
+}
+
+interface PaginatedMovements {
+    data: MovementData[];
+    links: PaginationLink[];
+    current_page: number;
+    last_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+    per_page: number;
+}
+
 interface Props {
-    movements: MovementData[];
+    movements: PaginatedMovements;
     warehouses: WarehouseData[];
     items: ItemData[];
     canCreate: boolean;
@@ -202,14 +219,14 @@ export default function MovementsIndex({ movements, warehouses, items, canCreate
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {movements.length === 0 ? (
+                                    {movements.data.length === 0 ? (
                                         <tr>
                                             <td colSpan={10} className="p-8 text-center text-neutral-500">
                                                 Aucun mouvement de stock disponible.
                                             </td>
                                         </tr>
                                     ) : (
-                                        movements.map(mov => (
+                                        movements.data.map(mov => (
                                             <tr key={mov.id} className="border-b border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50/20">
                                                 <td className="p-4 font-mono text-xs">#{mov.id}</td>
                                                 <td className="p-4 text-xs text-neutral-500">{formatDate(mov.created_at)}</td>
@@ -275,6 +292,47 @@ export default function MovementsIndex({ movements, warehouses, items, canCreate
                                 </tbody>
                             </table>
                         </div>
+                        {/* Pagination Controls */}
+                        {movements.last_page > 1 && (
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-t border-neutral-200 dark:border-neutral-800 p-4 bg-neutral-50/50 dark:bg-neutral-900/50">
+                                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                    Affichage de <span className="font-semibold text-neutral-700 dark:text-neutral-200">{movements.from || 0}</span> à <span className="font-semibold text-neutral-700 dark:text-neutral-200">{movements.to || 0}</span> sur <span className="font-semibold text-neutral-700 dark:text-neutral-200">{movements.total}</span> mouvements
+                                </p>
+                                <div className="flex items-center gap-1 flex-wrap">
+                                    {movements.links.map((link, idx) => {
+                                        let label = link.label;
+                                        if (label.includes('Previous') || label.includes('Précédent') || label.includes('&laquo;')) {
+                                            label = '← Précédent';
+                                        } else if (label.includes('Next') || label.includes('Suivant') || label.includes('&raquo;')) {
+                                            label = 'Suivant →';
+                                        }
+
+                                        return (
+                                            <button
+                                                key={idx}
+                                                onClick={() => {
+                                                    if (link.url) {
+                                                        router.get(link.url, {}, {
+                                                            preserveState: true,
+                                                        });
+                                                    }
+                                                }}
+                                                disabled={!link.url}
+                                                className={`inline-flex items-center justify-center rounded-md text-xs font-medium h-8 px-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+                                                    ${link.active
+                                                        ? 'bg-primary text-primary-foreground shadow-sm'
+                                                        : 'border border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-sm'
+                                                    }
+                                                    ${!link.url ? 'pointer-events-none opacity-50' : ''}
+                                                `}
+                                            >
+                                                {label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 

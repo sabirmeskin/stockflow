@@ -1,5 +1,5 @@
 import { Head, useForm, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
     Plus, 
     Edit2, 
@@ -57,17 +57,40 @@ interface WarehouseData {
     name: string;
 }
 
+interface PaginationLink {
+    url: string | null;
+    label: string;
+    active: boolean;
+}
+
+interface PaginatedItems {
+    data: ItemData[];
+    links: PaginationLink[];
+    current_page: number;
+    last_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+    per_page: number;
+}
+
 interface Props {
-    items: ItemData[];
+    items: PaginatedItems;
+    categories: string[];
     warehouses: WarehouseData[];
     canManage: boolean;
     canManageAlerts: boolean;
+    filters: {
+        search?: string;
+        category?: string;
+        alert?: string;
+    };
 }
 
-export default function ItemsIndex({ items, warehouses, canManage, canManageAlerts }: Props) {
-    const [search, setSearch] = useState('');
-    const [categoryFilter, setCategoryFilter] = useState('ALL');
-    const [alertFilter, setAlertFilter] = useState('ALL');
+export default function ItemsIndex({ items, categories, warehouses, canManage, canManageAlerts, filters }: Props) {
+    const [search, setSearch] = useState(filters.search || '');
+    const [categoryFilter, setCategoryFilter] = useState(filters.category || 'ALL');
+    const [alertFilter, setAlertFilter] = useState(filters.alert || 'ALL');
     
     const [expandedItem, setExpandedItem] = useState<number | null>(null);
     const [isAddOpen, setIsAddOpen] = useState(false);
@@ -92,17 +115,50 @@ export default function ItemsIndex({ items, warehouses, canManage, canManageAler
         quantity: '' as any,
     });
 
-    const categories = Array.from(new Set(items.map(item => item.category)));
+    // Handle immediate updates for selectors
+    const handleCategoryChange = (val: string) => {
+        setCategoryFilter(val);
+        router.get('/items', {
+            search: search,
+            category: val,
+            alert: alertFilter,
+        }, {
+            preserveState: true,
+            replace: true,
+        });
+    };
 
-    const filteredItems = items.filter(item => {
-        const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase()) || 
-                              item.sku.toLowerCase().includes(search.toLowerCase());
-        const matchesCategory = categoryFilter === 'ALL' || item.category === categoryFilter;
-        const matchesAlert = alertFilter === 'ALL' || 
-                             (alertFilter === 'LOW' && item.is_low_stock) || 
-                             (alertFilter === 'OK' && !item.is_low_stock);
-        return matchesSearch && matchesCategory && matchesAlert;
-    });
+    const handleAlertChange = (val: string) => {
+        setAlertFilter(val);
+        router.get('/items', {
+            search: search,
+            category: categoryFilter,
+            alert: val,
+        }, {
+            preserveState: true,
+            replace: true,
+        });
+    };
+
+    // Debounced search
+    useEffect(() => {
+        if (search === (filters.search || '')) return;
+
+        const timer = setTimeout(() => {
+            router.get('/items', {
+                search: search,
+                category: categoryFilter,
+                alert: alertFilter,
+            }, {
+                preserveState: true,
+                replace: true,
+            });
+        }, 350);
+
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    const filteredItems = items.data;
 
     const handleAddOpen = () => {
         itemForm.reset();
@@ -175,7 +231,7 @@ export default function ItemsIndex({ items, warehouses, canManage, canManageAler
     };
 
     const formatCurrency = (val: number) => {
-        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val);
+        return new Intl.NumberFormat('fr-MA', { style: 'currency', currency: 'MAD' }).format(val);
     };
 
     return (
@@ -221,7 +277,7 @@ export default function ItemsIndex({ items, warehouses, canManage, canManageAler
                             className="pl-9"
                         />
                     </div>
-                    <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <Select value={categoryFilter} onValueChange={handleCategoryChange}>
                         <SelectTrigger className="w-full sm:w-[180px]">
                             <SelectValue placeholder="Catégorie" />
                         </SelectTrigger>
@@ -232,7 +288,7 @@ export default function ItemsIndex({ items, warehouses, canManage, canManageAler
                             ))}
                         </SelectContent>
                     </Select>
-                    <Select value={alertFilter} onValueChange={setAlertFilter}>
+                    <Select value={alertFilter} onValueChange={handleAlertChange}>
                         <SelectTrigger className="w-full sm:w-[180px]">
                             <SelectValue placeholder="Statut Alerte" />
                         </SelectTrigger>
@@ -389,6 +445,47 @@ export default function ItemsIndex({ items, warehouses, canManage, canManageAler
                             </tbody>
                         </table>
                     </div>
+                    {/* Pagination Controls */}
+                    {items.last_page > 1 && (
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-t border-neutral-200 dark:border-neutral-800 p-4 bg-neutral-50/50 dark:bg-neutral-900/50">
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                Affichage de <span className="font-semibold text-neutral-700 dark:text-neutral-200">{items.from || 0}</span> à <span className="font-semibold text-neutral-700 dark:text-neutral-200">{items.to || 0}</span> sur <span className="font-semibold text-neutral-700 dark:text-neutral-200">{items.total}</span> articles
+                            </p>
+                            <div className="flex items-center gap-1 flex-wrap">
+                                {items.links.map((link, idx) => {
+                                    let label = link.label;
+                                    if (label.includes('Previous') || label.includes('Précédent') || label.includes('&laquo;')) {
+                                        label = '← Précédent';
+                                    } else if (label.includes('Next') || label.includes('Suivant') || label.includes('&raquo;')) {
+                                        label = 'Suivant →';
+                                    }
+
+                                    return (
+                                        <button
+                                            key={idx}
+                                            onClick={() => {
+                                                if (link.url) {
+                                                    router.get(link.url, {}, {
+                                                        preserveState: true,
+                                                    });
+                                                }
+                                            }}
+                                            disabled={!link.url}
+                                            className={`inline-flex items-center justify-center rounded-md text-xs font-medium h-8 px-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+                                                ${link.active
+                                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                                    : 'border border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-sm'
+                                                }
+                                                ${!link.url ? 'pointer-events-none opacity-50' : ''}
+                                            `}
+                                        >
+                                            {label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Add Dialog */}
@@ -436,7 +533,7 @@ export default function ItemsIndex({ items, warehouses, canManage, canManageAler
                                     {itemForm.errors.category && <p className="text-xs text-rose-500">{itemForm.errors.category}</p>}
                                 </div>
                                 <div className="space-y-1">
-                                    <Label htmlFor="price">Prix Unitaire HT (EUR)</Label>
+                                    <Label htmlFor="price">Prix Unitaire HT (MAD)</Label>
                                     <Input 
                                         id="price" 
                                         type="number" 
@@ -520,7 +617,7 @@ export default function ItemsIndex({ items, warehouses, canManage, canManageAler
                                     {itemForm.errors.category && <p className="text-xs text-rose-500">{itemForm.errors.category}</p>}
                                 </div>
                                 <div className="space-y-1">
-                                    <Label htmlFor="edit-price">Prix HT (EUR)</Label>
+                                    <Label htmlFor="edit-price">Prix HT (MAD)</Label>
                                     <Input 
                                         id="edit-price" 
                                         type="number" 

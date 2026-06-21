@@ -12,7 +12,8 @@ StockFlow est une plateforme web moderne et intuitive de gestion de stocks multi
 *   **Répartition Globale** : Vue détaillée de l'inventaire affichant la répartition exacte des quantités d'un produit spécifique à travers tous les entrepôts.
 
 ### 📋 Catalogue d'Articles & Alertes Intelligent
-*   **Fiches Articles Complètes** : Fiches avec code SKU unique, désignation, description textuelle, catégorisation et prix unitaire HT (EUR).
+*   **Fiches Articles Complètes** : Fiches avec code SKU unique, désignation, description textuelle, catégorisation et prix unitaire HT (MAD).
+*   **Recherche & Pagination Serveur** : Filtrage dynamique par nom/SKU, catégorie et statut d'alerte avec pagination côté serveur pour des performances optimales sur de grands catalogues.
 *   **Double Niveau d'Alerte** :
     *   *Seuil global* défini sur la fiche de l'article (quantité de sécurité minimale par défaut).
     *   *Surcharge spécifique (override)* configurée individuellement par entrepôt pour adapter le stock de sécurité aux spécificités locales (ex: taux de rotation plus élevé).
@@ -42,16 +43,18 @@ StockFlow est une plateforme web moderne et intuitive de gestion de stocks multi
 *   **Suspension de Compte** : Désactivation en un clic des comptes utilisateurs. Un middleware (`EnsureUserIsActive`) déconnecte instantanément les sessions inactives et bloque l'authentification avec un message explicite.
 
 ### 📊 Analyses Analytiques & Rapports
-*   **Exports Excel Premium** : Génération instantanée de tableaux structurés contenant l'inventaire physique global ou l'historique complet des mouvements via *Laravel Excel*.
-*   **Rapports PDF Professionnels** : Fiches d'inventaire et historiques des flux mis en page proprement avec *DomPDF*, prêts pour l'impression ou l'audit physique.
+*   **Exports Excel Premium** : Génération instantanée de tableaux structurés contenant l'inventaire physique global ou l'historique complet des mouvements via *Laravel Excel*, entièrement traduits en français (types de flux, statuts, dates au format `jj/mm/aaaa`).
+*   **Rapports PDF Professionnels** : Fiches d'inventaire et historiques des flux mis en page proprement avec *DomPDF*, avec statuts concis (Critique/Correct, Entrée/Sortie/Transfert) prêts pour l'impression ou l'audit physique.
 *   **Journal d'Audit Système** : Historisation immuable de chaque événement sensible (connexions, modifications d'articles, validation/rejet de mouvements, modifications d'habilitations) enregistrant l'auteur, la nature de l'action et l'adresse IP.
 
 ---
 
 ## 🎨 Design & Expérience Utilisateur (UX)
 
-*   **Aesthétique Premium** : Design soigné basé sur des palettes de couleurs harmonieuses (mode clair/sombre supporté).
+*   **Aesthétique Premium** : Design soigné basé sur des palettes de couleurs harmonieuses avec support natif du mode clair et sombre.
+*   **Basculement Rapide Clair/Sombre** : Bouton d'accès rapide intégré directement dans la barre latérale pour passer instantanément entre le mode clair et le mode sombre.
 *   **Micro-Animations** : Transitions fluides, badges animés pour les alertes critiques de sous-stockage et toasts interactifs instantanés (`sonner`) confirmant chaque succès ou erreur opérationnelle.
+*   **Devise Locale (MAD)** : Formatage automatique de toutes les valeurs monétaires en Dirham Marocain via `Intl.NumberFormat`.
 *   **Ergonomie Responsive** : Conçu pour s'adapter parfaitement aux écrans d'ordinateurs de bureau, tablettes et terminaux mobiles pour les opérateurs sur le terrain.
 
 ---

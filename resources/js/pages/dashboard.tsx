@@ -65,7 +65,7 @@ export default function Dashboard({
 }: Props) {
     
     const formatCurrency = (value: number) => {
-        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
+        return new Intl.NumberFormat('fr-MA', { style: 'currency', currency: 'MAD' }).format(value);
     };
 
     return (

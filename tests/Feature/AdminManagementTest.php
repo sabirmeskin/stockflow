@@ -110,3 +110,58 @@ test('admin can update item alerts and stock overrides', function () {
     expect($stock->quantity)->toBe(100);
 });
 
+test('admin can access items index with server side pagination and filtering', function () {
+    $this->actingAs($this->admin);
+
+    // Verify index access and paginated structure response
+    $response = $this->get(route('items.index'));
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('items/index')
+        ->has('items.data')
+        ->has('items.links')
+        ->has('categories')
+        ->has('filters')
+    );
+
+    // Verify search filter (case-insensitive)
+    $response = $this->get(route('items.index', ['search' => 'portable']));
+    $response->assertOk();
+    $items = $response->original->getData()['page']['props']['items']['data'];
+    foreach ($items as $item) {
+        expect(strtolower($item['name']) . strtolower($item['sku']))->toContain('portable');
+    }
+
+    // Verify category filter
+    $response = $this->get(route('items.index', ['category' => 'Outillage']));
+    $response->assertOk();
+    $items = $response->original->getData()['page']['props']['items']['data'];
+    foreach ($items as $item) {
+        expect($item['category'])->toBe('Outillage');
+    }
+
+    // Verify alert filter (LOW status)
+    $response = $this->get(route('items.index', ['alert' => 'LOW']));
+    $response->assertOk();
+    $items = $response->original->getData()['page']['props']['items']['data'];
+    foreach ($items as $item) {
+        expect($item['is_low_stock'])->toBeTrue();
+    }
+});
+
+test('admin can access movements index with server side pagination', function () {
+    $this->actingAs($this->admin);
+
+    $response = $this->get(route('movements.index'));
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('movements/index')
+        ->has('movements.data')
+        ->has('movements.links')
+        ->has('warehouses')
+        ->has('items')
+    );
+});
+
+
+

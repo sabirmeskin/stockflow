@@ -51,11 +51,15 @@
             </tr>
         </thead>
         <tbody>
+            @php
+                $typeLabels = ['IN' => 'Entrée', 'OUT' => 'Sortie', 'TRANSFER' => 'Transfert'];
+                $statusLabels = ['pending' => 'En attente', 'validated' => 'Validé', 'rejected' => 'Rejeté'];
+            @endphp
             @foreach($movements as $mov)
                 <tr>
                     <td>{{ $mov->created_at->format('d/m/Y H:i') }}</td>
                     <td>
-                        <span class="type-{{ strtolower($mov->type) }}">{{ $mov->type }}</span>
+                        <span class="type-{{ strtolower($mov->type) }}">{{ $typeLabels[$mov->type] ?? $mov->type }}</span>
                     </td>
                     <td><strong>{{ $mov->item ? $mov->item->sku : 'N/A' }}</strong></td>
                     <td>{{ $mov->item ? $mov->item->name : 'N/A' }}</td>
@@ -64,7 +68,7 @@
                     <td>{{ $mov->destinationWarehouse ? $mov->destinationWarehouse->name : '-' }}</td>
                     <td>{{ $mov->creator ? $mov->creator->name : 'Système' }}</td>
                     <td>
-                        <span class="badge badge-{{ $mov->status }}">{{ $mov->status }}</span>
+                        <span class="badge badge-{{ $mov->status }}">{{ $statusLabels[$mov->status] ?? $mov->status }}</span>
                     </td>
                 </tr>
             @endforeach

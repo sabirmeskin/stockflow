@@ -58,11 +58,11 @@
                     <td>{{ $item ? $item->name : 'N/A' }}</td>
                     <td>{{ $item ? $item->category : 'N/A' }}</td>
                     <td>{{ $stock->quantity }}</td>
-                    <td>{{ number_format($item ? $item->price : 0, 2) }} €</td>
-                    <td>{{ number_format($stock->quantity * ($item ? $item->price : 0), 2) }} €</td>
+                    <td>{{ number_format($item ? $item->price : 0, 2) }} DH</td>
+                    <td>{{ number_format($stock->quantity * ($item ? $item->price : 0), 2) }} DH</td>
                     <td>
                         @if($isLow)
-                            <span class="badge badge-danger">Alerte Seuil (&le; {{ $threshold }})</span>
+                            <span class="badge badge-danger">Critique</span>
                         @else
                             <span class="badge badge-success">Correct</span>
                         @endif

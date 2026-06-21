@@ -19,7 +19,7 @@ class SettingController extends Controller
             'company_address' => SystemSetting::get('company_address', ''),
             'company_phone' => SystemSetting::get('company_phone', ''),
             'company_email' => SystemSetting::get('company_email', ''),
-            'currency' => SystemSetting::get('currency', 'EUR'),
+            'currency' => SystemSetting::get('currency', 'MAD'),
         ];
 
         return Inertia::render('settings/system', [

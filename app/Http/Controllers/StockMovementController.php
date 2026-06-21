@@ -18,22 +18,23 @@ class StockMovementController extends Controller
         // Access is authenticated only
         $movements = StockMovement::with(['item', 'sourceWarehouse', 'destinationWarehouse', 'creator', 'validator'])
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($mov) {
-                return [
-                    'id' => $mov->id,
-                    'type' => $mov->type,
-                    'item' => $mov->item,
-                    'source_warehouse' => $mov->sourceWarehouse,
-                    'destination_warehouse' => $mov->destinationWarehouse,
-                    'quantity' => $mov->quantity,
-                    'creator' => $mov->creator,
-                    'validator' => $mov->validator,
-                    'status' => $mov->status,
-                    'rejection_reason' => $mov->rejection_reason,
-                    'created_at' => $mov->created_at,
-                ];
-            });
+            ->paginate(10);
+
+        $movements->through(function ($mov) {
+            return [
+                'id' => $mov->id,
+                'type' => $mov->type,
+                'item' => $mov->item,
+                'source_warehouse' => $mov->sourceWarehouse,
+                'destination_warehouse' => $mov->destinationWarehouse,
+                'quantity' => $mov->quantity,
+                'creator' => $mov->creator,
+                'validator' => $mov->validator,
+                'status' => $mov->status,
+                'rejection_reason' => $mov->rejection_reason,
+                'created_at' => $mov->created_at,
+            ];
+        });
 
         $warehouses = Warehouse::all(['id', 'name']);
         $items = Item::with('stocks')->get();

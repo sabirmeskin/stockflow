@@ -23,8 +23,8 @@ class StockExport implements FromCollection, WithHeadings, WithMapping
             'Nom Article',
             'Catégorie',
             'Quantité',
-            'Prix Unitaire (EUR)',
-            'Valeur Totale (EUR)',
+            'Prix Unitaire (MAD)',
+            'Valeur Totale (MAD)',
             'Seuil Alerte',
             'Statut Alerte',
         ];

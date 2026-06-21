@@ -515,6 +515,6 @@ class DatabaseSeeder extends Seeder
         SystemSetting::set('company_address', '100 Boulevard de la Logistique, Paris, France');
         SystemSetting::set('company_phone', '+33 1 23 45 67 89');
         SystemSetting::set('company_email', 'contact@stockflow-logistics.com');
-        SystemSetting::set('currency', 'EUR');
+        SystemSetting::set('currency', 'MAD');
     }
 }

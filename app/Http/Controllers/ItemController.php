@@ -12,11 +12,56 @@ use Inertia\Inertia;
 
 class ItemController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         Gate::authorize('read_items');
 
-        $items = Item::with('stocks.warehouse')->get()->map(function ($item) {
+        $driver = \DB::connection()->getDriverName();
+        $likeOperator = $driver === 'sqlite' ? 'like' : 'ilike';
+
+        $query = Item::query();
+
+        // 1. Filter by Search Query (SKU or Name)
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search, $likeOperator) {
+                $q->where('name', $likeOperator, '%' . $search . '%')
+                  ->orWhere('sku', $likeOperator, '%' . $search . '%');
+            });
+        }
+
+        // 2. Filter by Category
+        if ($request->has('category') && $request->category !== 'ALL') {
+            $query->where('category', $request->category);
+        }
+
+        // 3. Filter by Alert Status
+        if ($request->has('alert') && $request->alert !== 'ALL') {
+            $alert = $request->alert;
+            if ($alert === 'LOW') {
+                $query->whereExists(function ($q) {
+                    $q->select(\DB::raw(1))
+                      ->from('stocks')
+                      ->whereColumn('stocks.item_id', 'items.id')
+                      ->whereRaw('stocks.quantity <= COALESCE(stocks.min_stock_override, items.min_stock)');
+                });
+            } elseif ($alert === 'OK') {
+                $query->whereNotExists(function ($q) {
+                    $q->select(\DB::raw(1))
+                      ->from('stocks')
+                      ->whereColumn('stocks.item_id', 'items.id')
+                      ->whereRaw('stocks.quantity <= COALESCE(stocks.min_stock_override, items.min_stock)');
+                });
+            }
+        }
+
+        // 4. Paginate items
+        $items = $query->with('stocks.warehouse')
+            ->orderBy('sku', 'asc')
+            ->paginate(10)
+            ->withQueryString();
+
+        $items->through(function ($item) {
             $totalStock = $item->stocks->sum('quantity');
             
             $isLowStock = false;
@@ -52,13 +97,22 @@ class ItemController extends Controller
             ];
         });
 
+        // Get unique categories for dropdown (based on all items, not just current page)
+        $categories = Item::distinct()->pluck('category')->toArray();
+
         $warehouses = Warehouse::all(['id', 'name']);
 
         return Inertia::render('items/index', [
             'items' => $items,
+            'categories' => $categories,
             'warehouses' => $warehouses,
             'canManage' => auth()->user()->can('manage_items'),
             'canManageAlerts' => auth()->user()->can('manage_alerts'),
+            'filters' => [
+                'search' => $request->search ?? '',
+                'category' => $request->category ?? 'ALL',
+                'alert' => $request->alert ?? 'ALL',
+            ],
         ]);
     }
 

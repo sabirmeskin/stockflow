@@ -36,10 +36,13 @@ class MovementExport implements FromCollection, WithHeadings, WithMapping
 
     public function map($mov): array
     {
+        $typeLabels = ['IN' => 'Entrée', 'OUT' => 'Sortie', 'TRANSFER' => 'Transfert'];
+        $statusLabels = ['pending' => 'En attente', 'validated' => 'Validé', 'rejected' => 'Rejeté'];
+
         return [
             $mov->id,
-            $mov->created_at->format('Y-m-d H:i:s'),
-            $mov->type,
+            $mov->created_at->format('d/m/Y H:i'),
+            $typeLabels[$mov->type] ?? $mov->type,
             $mov->item ? $mov->item->sku : 'N/A',
             $mov->item ? $mov->item->name : 'N/A',
             $mov->quantity,
@@ -47,7 +50,7 @@ class MovementExport implements FromCollection, WithHeadings, WithMapping
             $mov->destinationWarehouse ? $mov->destinationWarehouse->name : 'N/A',
             $mov->creator ? $mov->creator->name : 'Système',
             $mov->validator ? $mov->validator->name : 'N/A',
-            $mov->status,
+            $statusLabels[$mov->status] ?? $mov->status,
             $mov->rejection_reason ?: '',
         ];
     }

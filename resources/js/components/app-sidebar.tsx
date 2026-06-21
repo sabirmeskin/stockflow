@@ -9,12 +9,15 @@ import {
     ClipboardList,
     BookOpen,
     CheckSquare,
-    ShieldCheck
+    ShieldCheck,
+    Sun,
+    Moon
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
+import { useAppearance } from '@/hooks/use-appearance';
 import {
     Sidebar,
     SidebarContent,
@@ -24,10 +27,21 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 export function AppSidebar() {
     const { auth, pendingMovementsCount } = usePage().props as any;
     const user = auth?.user;
+    const { resolvedAppearance, updateAppearance } = useAppearance();
+
+    const toggleTheme = () => {
+        updateAppearance(resolvedAppearance === 'dark' ? 'light' : 'dark');
+    };
 
     const hasPermission = (perm: string) => {
         if (!user || !user.permissions) return false;
@@ -114,7 +128,31 @@ export function AppSidebar() {
 
             <SidebarFooter>
                 <NavFooter items={footerNavItems} className="mt-auto" />
-                <NavUser />
+                <div className="flex items-center gap-1">
+                    <div className="flex-1 min-w-0">
+                        <NavUser />
+                    </div>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button
+                                    onClick={toggleTheme}
+                                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-input bg-background text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                                    aria-label={resolvedAppearance === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
+                                >
+                                    {resolvedAppearance === 'dark' ? (
+                                        <Sun className="h-4 w-4" />
+                                    ) : (
+                                        <Moon className="h-4 w-4" />
+                                    )}
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                                {resolvedAppearance === 'dark' ? 'Mode clair' : 'Mode sombre'}
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
             </SidebarFooter>
         </Sidebar>
     );
