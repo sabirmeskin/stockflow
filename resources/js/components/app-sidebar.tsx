@@ -77,13 +77,7 @@ export function AppSidebar() {
         },
     ].filter(item => item.show);
 
-    const footerNavItems = [
-        {
-            title: 'Documentation',
-            href: 'https://laravel.com/docs',
-            icon: BookOpen,
-        },
-    ];
+    const footerNavItems: any[] = [];
 
     return (
         <Sidebar collapsible="icon" variant="inset">
