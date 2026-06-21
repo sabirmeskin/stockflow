@@ -1,4 +1,4 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { 
     Plus, 
@@ -155,12 +155,12 @@ export default function ItemsIndex({ items, warehouses, canManage, canManageAler
         
         const payload = {
             warehouse_id: alertForm.data.warehouse_id,
-            min_stock_override: alertForm.data.min_stock_override !== '' ? parseInt(alertForm.data.min_stock_override) : null,
-            quantity: alertForm.data.quantity !== '' ? parseInt(alertForm.data.quantity) : null,
+            min_stock_override: alertForm.data.min_stock_override !== '' && alertForm.data.min_stock_override !== null ? parseInt(alertForm.data.min_stock_override) : null,
+            quantity: alertForm.data.quantity !== '' && alertForm.data.quantity !== null ? parseInt(alertForm.data.quantity) : null,
         };
 
         // Inertia raw request since we might send null/empty overrides
-        useForm(payload).post(`/items/${selectedItem.id}/alerts`, {
+        router.post(`/items/${selectedItem.id}/alerts`, payload, {
             onSuccess: () => {
                 setIsAlertOpen(false);
                 alertForm.reset();
@@ -170,7 +170,7 @@ export default function ItemsIndex({ items, warehouses, canManage, canManageAler
 
     const handleDelete = (item: ItemData) => {
         if (confirm(`Êtes-vous sûr de vouloir supprimer l'article "${item.name}" ?`)) {
-            useForm().delete(`/items/${item.id}`);
+            router.delete(`/items/${item.id}`);
         }
     };
 

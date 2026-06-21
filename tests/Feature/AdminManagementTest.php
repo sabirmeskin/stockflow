@@ -87,3 +87,26 @@ test('admin cannot delete system roles', function () {
     $response->assertSessionHasErrors('error');
     expect(Role::where('name', 'admin')->exists())->toBeTrue();
 });
+
+test('admin can update item alerts and stock overrides', function () {
+    $this->actingAs($this->admin);
+
+    $item = \App\Models\Item::first();
+    $warehouse = \App\Models\Warehouse::first();
+
+    $response = $this->post(route('items.alerts.update', $item), [
+        'warehouse_id' => $warehouse->id,
+        'min_stock_override' => 15,
+        'quantity' => 100,
+    ]);
+
+    $response->assertRedirect();
+    
+    $stock = \App\Models\Stock::where('item_id', $item->id)
+        ->where('warehouse_id', $warehouse->id)
+        ->first();
+
+    expect($stock->min_stock_override)->toBe(15);
+    expect($stock->quantity)->toBe(100);
+});
+
