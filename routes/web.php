@@ -1,11 +1,48 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\WarehouseController;
+use App\Http\Controllers\ItemController;
+use App\Http\Controllers\StockMovementController;
+use App\Http\Controllers\SettingController;
+use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\ReportController;
 
 Route::inertia('/', 'welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Users CRUD (Admin only)
+    Route::resource('users', UserController::class);
+
+    // Warehouses CRUD
+    Route::resource('warehouses', WarehouseController::class);
+
+    // Items CRUD & Stock Alert thresholds
+    Route::resource('items', ItemController::class);
+    Route::post('items/{item}/alerts', [ItemController::class, 'updateAlerts'])->name('items.alerts.update');
+
+    // Stock Movements
+    Route::get('movements', [StockMovementController::class, 'index'])->name('movements.index');
+    Route::post('movements', [StockMovementController::class, 'store'])->name('movements.store');
+    Route::post('movements/{movement}/validate', [StockMovementController::class, 'validateMovement'])->name('movements.validate');
+    Route::post('movements/{movement}/reject', [StockMovementController::class, 'rejectMovement'])->name('movements.reject');
+
+    // System Settings (Admin only)
+    Route::get('settings/system', [SettingController::class, 'index'])->name('settings.system.index');
+    Route::post('settings/system', [SettingController::class, 'store'])->name('settings.system.store');
+
+    // Audit Logs (Admin only)
+    Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+
+    // Exports
+    Route::get('reports/stock/excel', [ReportController::class, 'exportStockExcel'])->name('reports.stock.excel');
+    Route::get('reports/stock/pdf', [ReportController::class, 'exportStockPdf'])->name('reports.stock.pdf');
+    Route::get('reports/movement/excel', [ReportController::class, 'exportMovementExcel'])->name('reports.movement.excel');
+    Route::get('reports/movement/pdf', [ReportController::class, 'exportMovementPdf'])->name('reports.movement.pdf');
 });
 
 require __DIR__.'/settings.php';
