@@ -7,7 +7,9 @@ import {
     Users, 
     Settings, 
     ClipboardList,
-    BookOpen
+    BookOpen,
+    CheckSquare,
+    ShieldCheck
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -24,7 +26,7 @@ import {
 } from '@/components/ui/sidebar';
 
 export function AppSidebar() {
-    const { auth } = usePage().props as any;
+    const { auth, pendingMovementsCount } = usePage().props as any;
     const user = auth?.user;
 
     const hasPermission = (perm: string) => {
@@ -58,9 +60,22 @@ export function AppSidebar() {
             show: hasPermission('manage_movements') || hasPermission('validate_movements'),
         },
         {
+            title: 'Approbations',
+            href: '/validations',
+            icon: CheckSquare,
+            show: hasPermission('validate_movements'),
+            badge: pendingMovementsCount || 0,
+        },
+        {
             title: 'Utilisateurs',
             href: '/users',
             icon: Users,
+            show: hasPermission('manage_users'),
+        },
+        {
+            title: 'Habilitations',
+            href: '/roles',
+            icon: ShieldCheck,
             show: hasPermission('manage_users'),
         },
         {

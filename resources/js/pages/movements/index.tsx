@@ -1,20 +1,16 @@
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import { 
     Plus, 
     ArrowUpRight, 
     ArrowDownRight, 
     ArrowLeftRight, 
-    Check, 
-    X, 
     AlertCircle, 
-    Clock, 
     FileSpreadsheet, 
     FileText,
     User,
     UserCheck,
-    MessageSquare,
-    CheckCircle2
+    MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -82,13 +78,10 @@ interface Props {
     warehouses: WarehouseData[];
     items: ItemData[];
     canCreate: boolean;
-    canValidate: boolean;
 }
 
-export default function MovementsIndex({ movements, warehouses, items, canCreate, canValidate }: Props) {
+export default function MovementsIndex({ movements, warehouses, items, canCreate }: Props) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
-    const [isRejectOpen, setIsRejectOpen] = useState(false);
-    const [selectedMovement, setSelectedMovement] = useState<MovementData | null>(null);
 
     // Form for creating movements
     const createForm = useForm({
@@ -97,11 +90,6 @@ export default function MovementsIndex({ movements, warehouses, items, canCreate
         quantity: 1,
         source_warehouse_id: '',
         destination_warehouse_id: '',
-    });
-
-    // Form for rejection reason
-    const rejectForm = useForm({
-        rejection_reason: '',
     });
 
     // Stock verification feedback on client-side
@@ -148,34 +136,6 @@ export default function MovementsIndex({ movements, warehouses, items, canCreate
         });
     };
 
-    const handleValidate = (mov: MovementData) => {
-        if (confirm(`Voulez-vous valider le mouvement de stock #${mov.id} ?`)) {
-            useForm().post(`/movements/${mov.id}/validate`);
-        }
-    };
-
-    const handleRejectOpen = (mov: MovementData) => {
-        setSelectedMovement(mov);
-        rejectForm.reset();
-        setIsRejectOpen(true);
-    };
-
-    const submitReject = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!selectedMovement) return;
-
-        rejectForm.post(`/movements/${selectedMovement.id}/reject`, {
-            onSuccess: () => {
-                setIsRejectOpen(false);
-                rejectForm.reset();
-            }
-        });
-    };
-
-    // Filter pending vs rest
-    const pendingMovements = movements.filter(m => m.status === 'pending');
-    const pastMovements = movements.filter(m => m.status !== 'pending');
-
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('fr-FR', {
             day: 'numeric',
@@ -196,7 +156,7 @@ export default function MovementsIndex({ movements, warehouses, items, canCreate
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight">Mouvements de Stocks</h1>
                         <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                            Suivez les flux de marchandises et traitez les demandes de validation en attente.
+                            Suivez l'historique complet et enregistrez les flux de marchandises de vos entrepôts.
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -218,91 +178,11 @@ export default function MovementsIndex({ movements, warehouses, items, canCreate
                     </div>
                 </div>
 
-                {/* Pending Validations Section (Admin Only viewable items) */}
-                {canValidate && pendingMovements.length > 0 && (
-                    <Card className="border-rose-200 bg-rose-50/10 dark:border-rose-950/20 dark:bg-rose-950/5">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-lg font-bold text-rose-600 dark:text-rose-400 flex items-center gap-2">
-                                <Clock className="h-5 w-5 animate-pulse" /> Mouvements en attente de validation ({pendingMovements.length})
-                            </CardTitle>
-                            <CardDescription>
-                                Ces flux de stocks ont été saisis par les opérateurs terrain et nécessitent votre approbation pour être appliqués.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-0">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm border-collapse">
-                                    <thead>
-                                        <tr className="border-b border-rose-100 bg-rose-50/20 dark:border-rose-950/20 dark:bg-rose-950/10 text-xs font-semibold text-neutral-500 uppercase tracking-wider">
-                                            <th className="p-4">ID</th>
-                                            <th className="p-4">Type</th>
-                                            <th className="p-4">Article</th>
-                                            <th className="p-4">Quantité</th>
-                                            <th className="p-4">Source</th>
-                                            <th className="p-4">Destination</th>
-                                            <th className="p-4">Saisi Par</th>
-                                            <th className="p-4">Date</th>
-                                            <th className="p-4 text-right">Décision</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {pendingMovements.map(mov => (
-                                            <tr key={mov.id} className="border-b border-rose-100/50 dark:border-rose-950/10 hover:bg-rose-50/5">
-                                                <td className="p-4 font-mono font-semibold">#{mov.id}</td>
-                                                <td className="p-4">
-                                                    <Badge className={`${
-                                                        mov.type === 'IN' ? 'bg-emerald-100 text-emerald-800' : 
-                                                        mov.type === 'OUT' ? 'bg-rose-100 text-rose-800' : 
-                                                        'bg-blue-100 text-blue-800'
-                                                    } border-0`}>
-                                                        {mov.type}
-                                                    </Badge>
-                                                </td>
-                                                <td className="p-4">
-                                                    <div className="font-semibold">{mov.item?.name}</div>
-                                                    <div className="text-xs text-neutral-400">{mov.item?.sku}</div>
-                                                </td>
-                                                <td className="p-4 font-bold font-mono">{mov.quantity} U</td>
-                                                <td className="p-4">{mov.source_warehouse?.name || '-'}</td>
-                                                <td className="p-4">{mov.destination_warehouse?.name || '-'}</td>
-                                                <td className="p-4 flex items-center gap-1 text-xs">
-                                                    <User className="h-3 w-3 text-neutral-400" />
-                                                    {mov.creator?.name}
-                                                </td>
-                                                <td className="p-4 text-xs text-neutral-500">{formatDate(mov.created_at)}</td>
-                                                <td className="p-4 text-right">
-                                                    <div className="flex justify-end gap-1.5">
-                                                        <Button 
-                                                            size="sm" 
-                                                            onClick={() => handleValidate(mov)}
-                                                            className="bg-emerald-600 hover:bg-emerald-700 h-8 gap-1 text-xs"
-                                                        >
-                                                            <Check className="h-3.5 w-3.5" /> Valider
-                                                        </Button>
-                                                        <Button 
-                                                            size="sm" 
-                                                            variant="destructive" 
-                                                            onClick={() => handleRejectOpen(mov)}
-                                                            className="h-8 gap-1 text-xs"
-                                                        >
-                                                            <X className="h-3.5 w-3.5" /> Rejeter
-                                                        </Button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
-
                 {/* History Section */}
                 <Card className="border border-neutral-200/50 dark:border-neutral-800">
                     <CardHeader>
                         <CardTitle>Historique général des flux</CardTitle>
-                        <CardDescription>Consultez l'historique complet de tous les mouvements validés et rejetés.</CardDescription>
+                        <CardDescription>Consultez l'historique complet de tous les mouvements validés, en attente et rejetés.</CardDescription>
                     </CardHeader>
                     <CardContent className="p-0">
                         <div className="overflow-x-auto">
@@ -322,14 +202,14 @@ export default function MovementsIndex({ movements, warehouses, items, canCreate
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {pastMovements.length === 0 ? (
+                                    {movements.length === 0 ? (
                                         <tr>
                                             <td colSpan={10} className="p-8 text-center text-neutral-500">
-                                                Aucun mouvement historique disponible.
+                                                Aucun mouvement de stock disponible.
                                             </td>
                                         </tr>
                                     ) : (
-                                        pastMovements.map(mov => (
+                                        movements.map(mov => (
                                             <tr key={mov.id} className="border-b border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50/20">
                                                 <td className="p-4 font-mono text-xs">#{mov.id}</td>
                                                 <td className="p-4 text-xs text-neutral-500">{formatDate(mov.created_at)}</td>
@@ -359,14 +239,18 @@ export default function MovementsIndex({ movements, warehouses, items, canCreate
                                                 <td className="p-4">
                                                     <Badge className={`${
                                                         mov.status === 'validated' 
-                                                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400' 
-                                                            : 'bg-rose-100 text-rose-800 dark:bg-rose-950/30 dark:text-rose-400'
-                                                    } border-0`}>
-                                                        {mov.status}
+                                                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400' :
+                                                        mov.status === 'rejected'
+                                                            ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/30 dark:text-rose-400'
+                                                            : 'bg-amber-100 text-amber-800 dark:bg-amber-950/30 dark:text-amber-400'
+                                                    } border-0 flex items-center w-fit gap-1 text-[10px] font-bold`}>
+                                                        {mov.status === 'pending' ? 'en attente' : (mov.status === 'validated' ? 'validé' : 'rejeté')}
                                                     </Badge>
                                                 </td>
                                                 <td className="p-4 text-xs text-neutral-500">
-                                                    {mov.status === 'validated' ? (
+                                                    {mov.status === 'pending' ? (
+                                                        <span className="text-neutral-400 italic">En attente d'approbation</span>
+                                                    ) : mov.status === 'validated' ? (
                                                         <div className="flex items-center gap-1">
                                                             <UserCheck className="h-3.5 w-3.5 text-emerald-600" />
                                                             <span>Validé par {mov.validator?.name}</span>
@@ -514,37 +398,6 @@ export default function MovementsIndex({ movements, warehouses, items, canCreate
                                     className={isStockInsufficient ? 'opacity-50 cursor-not-allowed' : ''}
                                 >
                                     Soumettre
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </DialogContent>
-                </Dialog>
-
-                {/* Reject Confirmation Dialog */}
-                <Dialog open={isRejectOpen} onOpenChange={setIsRejectOpen}>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Rejeter le Mouvement de Stock</DialogTitle>
-                            <DialogDescription>
-                                Veuillez indiquer le motif du rejet pour ce mouvement de stock.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <form onSubmit={submitReject} className="space-y-4 py-2">
-                            <div className="space-y-1">
-                                <Label htmlFor="rejection_reason">Motif de rejet</Label>
-                                <Input 
-                                    id="rejection_reason" 
-                                    placeholder="Ex: Erreur de saisie, quantité indisponible..."
-                                    value={rejectForm.data.rejection_reason} 
-                                    onChange={e => rejectForm.setData('rejection_reason', e.target.value)} 
-                                    required 
-                                />
-                                {rejectForm.errors.rejection_reason && <p className="text-xs text-rose-500">{rejectForm.errors.rejection_reason}</p>}
-                            </div>
-                            <DialogFooter className="pt-4">
-                                <Button type="button" variant="outline" onClick={() => setIsRejectOpen(false)}>Annuler</Button>
-                                <Button type="submit" variant="destructive" disabled={rejectForm.processing}>
-                                    Confirmer le rejet
                                 </Button>
                             </DialogFooter>
                         </form>

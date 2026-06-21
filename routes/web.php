@@ -9,6 +9,7 @@ use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\RolePermissionController;
 
 Route::inertia('/', 'welcome')->name('home');
 
@@ -17,6 +18,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Users CRUD (Admin only)
     Route::resource('users', UserController::class);
+    Route::post('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
+
+    // Roles & Permissions CRUD (Admin only)
+    Route::resource('roles', RolePermissionController::class)->only(['index', 'store', 'update', 'destroy']);
 
     // Warehouses CRUD
     Route::resource('warehouses', WarehouseController::class);
@@ -26,6 +31,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('items/{item}/alerts', [ItemController::class, 'updateAlerts'])->name('items.alerts.update');
 
     // Stock Movements
+    Route::get('validations', [StockMovementController::class, 'pendingIndex'])->name('movements.pending');
     Route::get('movements', [StockMovementController::class, 'index'])->name('movements.index');
     Route::post('movements', [StockMovementController::class, 'store'])->name('movements.store');
     Route::post('movements/{movement}/validate', [StockMovementController::class, 'validateMovement'])->name('movements.validate');

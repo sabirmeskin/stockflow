@@ -45,6 +45,13 @@ class HandleInertiaRequests extends Middleware
                 ]) : null,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'flash' => [
+                'success' => $request->session()->get('success'),
+                'error' => $request->session()->get('error') ?: $request->session()->get('errors')?->first(),
+            ],
+            'pendingMovementsCount' => $request->user() && $request->user()->hasRole('admin')
+                ? \App\Models\StockMovement::where('status', 'pending')->count()
+                : 0,
         ];
     }
 }

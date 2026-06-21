@@ -20,6 +20,7 @@ class UserController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'is_active' => $user->is_active,
                 'roles' => $user->getRoleNames(),
                 'created_at' => $user->created_at,
             ];
@@ -48,6 +49,7 @@ class UserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => bcrypt($request->password),
+            'is_active' => true,
         ]);
 
         $user->assignRole($request->role);
@@ -100,5 +102,22 @@ class UserController extends Controller
         AuditLogger::log('DELETE_USER', "Suppression de l'utilisateur {$email}");
 
         return redirect()->back()->with('success', 'Utilisateur supprimé avec succès.');
+    }
+
+    public function toggleStatus(User $user)
+    {
+        Gate::authorize('manage_users');
+
+        if ($user->id === auth()->id()) {
+            return redirect()->back()->withErrors(['error' => 'Vous ne pouvez pas activer ou désactiver votre propre compte.']);
+        }
+
+        $user->is_active = !$user->is_active;
+        $user->save();
+
+        $statusStr = $user->is_active ? 'activé' : 'désactivé';
+        AuditLogger::log('TOGGLE_USER_STATUS', "Le compte de l'utilisateur {$user->email} a été {$statusStr}");
+
+        return redirect()->back()->with('success', "Le compte de l'utilisateur a été {$statusStr} avec succès.");
     }
 }

@@ -1,4 +1,4 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { 
     Plus, 
@@ -8,7 +8,9 @@ import {
     Mail, 
     ShieldCheck, 
     Lock,
-    Search
+    Search,
+    UserX,
+    UserCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +31,7 @@ interface UserAccount {
     id: number;
     name: string;
     email: string;
+    is_active: boolean;
     roles: string[];
     created_at: string;
 }
@@ -36,9 +39,14 @@ interface UserAccount {
 interface Props {
     users: UserAccount[];
     roles: string[];
+    auth: {
+        user: {
+            id: number;
+        };
+    };
 }
 
-export default function UsersIndex({ users, roles }: Props) {
+export default function UsersIndex({ users, roles, auth }: Props) {
     const [search, setSearch] = useState('');
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
@@ -95,7 +103,14 @@ export default function UsersIndex({ users, roles }: Props) {
 
     const handleDelete = (user: UserAccount) => {
         if (confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur "${user.name}" ?`)) {
-            useForm().delete(`/users/${user.id}`);
+            router.delete(`/users/${user.id}`);
+        }
+    };
+
+    const handleToggleStatus = (user: UserAccount) => {
+        const actionStr = user.is_active ? 'désactiver' : 'activer';
+        if (confirm(`Voulez-vous ${actionStr} le compte de "${user.name}" ?`)) {
+            router.post(`/users/${user.id}/toggle-status`);
         }
     };
 
@@ -148,6 +163,7 @@ export default function UsersIndex({ users, roles }: Props) {
                                     <th className="p-4">Utilisateur</th>
                                     <th className="p-4">Email</th>
                                     <th className="p-4">Rôle</th>
+                                    <th className="p-4">Statut</th>
                                     <th className="p-4">Date d'inscription</th>
                                     <th className="p-4 text-right">Actions</th>
                                 </tr>
@@ -155,7 +171,7 @@ export default function UsersIndex({ users, roles }: Props) {
                             <tbody>
                                 {filteredUsers.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="p-8 text-center text-neutral-500">
+                                        <td colSpan={6} className="p-8 text-center text-neutral-500">
                                             Aucun utilisateur trouvé.
                                         </td>
                                     </tr>
@@ -172,11 +188,28 @@ export default function UsersIndex({ users, roles }: Props) {
                                             </td>
                                             <td className="p-4 text-neutral-600 dark:text-neutral-400">{user.email}</td>
                                             <td className="p-4">{getRoleBadge(user.roles)}</td>
+                                            <td className="p-4">
+                                                {user.is_active ? (
+                                                    <Badge className="bg-emerald-100 text-emerald-800 border-0 dark:bg-emerald-950/30 dark:text-emerald-400">Actif</Badge>
+                                                ) : (
+                                                    <Badge className="bg-rose-100 text-rose-800 border-0 dark:bg-rose-950/30 dark:text-rose-400">Désactivé</Badge>
+                                                )}
+                                            </td>
                                             <td className="p-4 text-xs text-neutral-500">
                                                 {new Date(user.created_at).toLocaleDateString('fr-FR')}
                                             </td>
                                             <td className="p-4 text-right">
                                                 <div className="flex justify-end gap-1.5">
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="icon" 
+                                                        onClick={() => handleToggleStatus(user)}
+                                                        disabled={user.id === auth.user.id}
+                                                        title={user.is_active ? "Désactiver le compte" : "Activer le compte"}
+                                                        className={`h-8 w-8 ${user.is_active ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/10' : 'text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/10'}`}
+                                                    >
+                                                        {user.is_active ? <UserX className="h-3.5 w-3.5" /> : <UserCheck className="h-3.5 w-3.5" />}
+                                                    </Button>
                                                     <Button 
                                                         variant="ghost" 
                                                         size="icon" 
@@ -189,6 +222,7 @@ export default function UsersIndex({ users, roles }: Props) {
                                                         variant="ghost" 
                                                         size="icon" 
                                                         onClick={() => handleDelete(user)}
+                                                        disabled={user.id === auth.user.id}
                                                         className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/10"
                                                     >
                                                         <Trash2 className="h-3.5 w-3.5" />

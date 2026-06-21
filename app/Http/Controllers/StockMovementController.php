@@ -43,7 +43,33 @@ class StockMovementController extends Controller
             'warehouses' => $warehouses,
             'items' => $items,
             'canCreate' => auth()->user()->can('manage_movements'),
-            'canValidate' => auth()->user()->can('validate_movements'),
+        ]);
+    }
+
+    public function pendingIndex()
+    {
+        Gate::authorize('validate_movements');
+
+        $movements = StockMovement::with(['item', 'sourceWarehouse', 'destinationWarehouse', 'creator'])
+            ->where('status', 'pending')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($mov) {
+                return [
+                    'id' => $mov->id,
+                    'type' => $mov->type,
+                    'item' => $mov->item,
+                    'source_warehouse' => $mov->sourceWarehouse,
+                    'destination_warehouse' => $mov->destinationWarehouse,
+                    'quantity' => $mov->quantity,
+                    'creator' => $mov->creator,
+                    'status' => $mov->status,
+                    'created_at' => $mov->created_at,
+                ];
+            });
+
+        return Inertia::render('movements/pending', [
+            'movements' => $movements,
         ]);
     }
 

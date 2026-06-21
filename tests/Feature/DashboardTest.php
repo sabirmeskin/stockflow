@@ -8,7 +8,9 @@ test('guests are redirected to the login page', function () {
 });
 
 test('authenticated users can visit the dashboard', function () {
+    $this->seed();
     $user = User::factory()->create();
+    $user->assignRole('operator');
     $this->actingAs($user);
 
     $response = $this->get(route('dashboard'));
