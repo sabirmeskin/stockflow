@@ -52,6 +52,9 @@ class HandleInertiaRequests extends Middleware
             'pendingMovementsCount' => $request->user() && $request->user()->hasRole('admin')
                 ? \App\Models\StockMovement::where('status', 'pending')->count()
                 : 0,
+            'unreadNotificationsCount' => $request->user()
+                ? $request->user()->unreadNotifications()->count()
+                : 0,
         ];
     }
 }

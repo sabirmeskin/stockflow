@@ -10,6 +10,7 @@ use App\Http\Controllers\SettingController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RolePermissionController;
+use App\Http\Controllers\NotificationController;
 
 Route::inertia('/', 'welcome')->name('home');
 
@@ -49,6 +50,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('reports/stock/pdf', [ReportController::class, 'exportStockPdf'])->name('reports.stock.pdf');
     Route::get('reports/movement/excel', [ReportController::class, 'exportMovementExcel'])->name('reports.movement.excel');
     Route::get('reports/movement/pdf', [ReportController::class, 'exportMovementPdf'])->name('reports.movement.pdf');
+
+    // Notifications API
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('notifications/mark-read', [NotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
+    Route::post('notifications/{id}/mark-read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');
 });
 
 require __DIR__.'/settings.php';
