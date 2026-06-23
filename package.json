@@ -3,6 +3,7 @@
     "private": true,
     "type": "module",
     "scripts": {
+        "heroku-postbuild": "echo 'Skipping node buildpack build'",
         "build": "vite build",
         "build:ssr": "vite build && vite build --ssr",
         "dev": "vite",
