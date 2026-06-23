@@ -43,9 +43,18 @@ StockFlow est une plateforme web moderne et intuitive de gestion de stocks multi
 *   **Suspension de Compte** : Désactivation en un clic des comptes utilisateurs. Un middleware (`EnsureUserIsActive`) déconnecte instantanément les sessions inactives et bloque l'authentification avec un message explicite.
 
 ### 📊 Analyses Analytiques & Rapports
+*   **Tableau de Bord Exécutif (Rapport PDF Avancé)** :
+    *   Interface de direction consolidant l'occupation des entrepôts, la répartition par catégorie, et la valorisation financière globale.
+    *   Moteur d'exportation PDF natif haute définition embarquant une pagination intelligente par sections qui préserve l'intégrité des données graphiques et tabulaires sans aucune coupure.
 *   **Exports Excel Premium** : Génération instantanée de tableaux structurés contenant l'inventaire physique global ou l'historique complet des mouvements via *Laravel Excel*, entièrement traduits en français (types de flux, statuts, dates au format `jj/mm/aaaa`).
 *   **Rapports PDF Professionnels** : Fiches d'inventaire et historiques des flux mis en page proprement avec *DomPDF*, avec statuts concis (Critique/Correct, Entrée/Sortie/Transfert) prêts pour l'impression ou l'audit physique.
 *   **Journal d'Audit Système** : Historisation immuable de chaque événement sensible (connexions, modifications d'articles, validation/rejet de mouvements, modifications d'habilitations) enregistrant l'auteur, la nature de l'action et l'adresse IP.
+
+### 🔔 Moteur de Notifications Temps Réel (WebSockets)
+*   **Notifications Push Instantanées** : Utilisation de Laravel Reverb et Laravel Echo pour diffuser en direct des notifications à travers l'application, sans aucun rafraîchissement manuel de la page.
+*   **Alertes de Sous-Stockage** : Notification immédiate envoyée à l'équipe logistique dès qu'un mouvement (sortie/transfert) fait passer le stock d'un article en dessous de son seuil d'alerte critique.
+*   **Mise à Jour des Validations** : Les opérateurs reçoivent instantanément une notification lorsque l'une de leurs demandes de mouvements est officiellement "Validée" ou "Rejetée" par l'administration.
+*   **Interface Hub de Notifications** : Panneau de notifications interactif intégré à la barre supérieure avec marquage "Lu/Non lu" et renvoi direct vers l'action concernée.
 
 ---
 
