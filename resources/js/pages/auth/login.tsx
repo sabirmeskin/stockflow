@@ -96,6 +96,48 @@ export default function Login({ status, canResetPassword }: Props) {
                     {status}
                 </div>
             )}
+
+            <div className="mt-8 flex flex-col items-center gap-3 border-t pt-6">
+                <p className="text-sm text-muted-foreground">Logins de test (Raccourcis)</p>
+                <div className="flex flex-wrap justify-center gap-2">
+                    <Button 
+                        variant="outline" 
+                        size="sm"
+                        type="button"
+                        onClick={() => {
+                            (document.getElementById('email') as HTMLInputElement).value = 'admin@stockflow.com';
+                            (document.getElementById('password') as HTMLInputElement).value = 'password';
+                            (document.querySelector('button[data-test="login-button"]') as HTMLButtonElement)?.click();
+                        }}
+                    >
+                        Admin
+                    </Button>
+                    <Button 
+                        variant="outline" 
+                        size="sm"
+                        type="button"
+                        onClick={() => {
+                            (document.getElementById('email') as HTMLInputElement).value = 'operator@stockflow.com';
+                            (document.getElementById('password') as HTMLInputElement).value = 'password';
+                            (document.querySelector('button[data-test="login-button"]') as HTMLButtonElement)?.click();
+                        }}
+                    >
+                        Opérateur
+                    </Button>
+                    <Button 
+                        variant="outline" 
+                        size="sm"
+                        type="button"
+                        onClick={() => {
+                            (document.getElementById('email') as HTMLInputElement).value = 'consultant@stockflow.com';
+                            (document.getElementById('password') as HTMLInputElement).value = 'password';
+                            (document.querySelector('button[data-test="login-button"]') as HTMLButtonElement)?.click();
+                        }}
+                    >
+                        Consultant
+                    </Button>
+                </div>
+            </div>
         </>
     );
 }
