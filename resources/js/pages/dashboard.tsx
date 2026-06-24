@@ -107,7 +107,7 @@ export default function Dashboard({
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight">Tableau de bord</h1>
                         <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                            Vue d'ensemble de vos entrepôts et de vos stocks en temps réeeeeeeeeel.
+                            Vue d'ensemble de vos entrepôts et de vos stocks en temps réel.
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
