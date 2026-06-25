@@ -1,16 +1,16 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\WarehouseController;
-use App\Http\Controllers\ItemController;
-use App\Http\Controllers\StockMovementController;
-use App\Http\Controllers\SettingController;
 use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ItemController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RolePermissionController;
-use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\SettingController;
+use App\Http\Controllers\StockMovementController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\WarehouseController;
+use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
 

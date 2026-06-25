@@ -1,8 +1,10 @@
 <?php
 
+use App\Models\Item;
+use App\Models\Stock;
 use App\Models\User;
+use App\Models\Warehouse;
 use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
     $this->seed();
@@ -18,14 +20,14 @@ test('admin can toggle user status', function () {
     // Toggle to false
     $response = $this->post(route('users.toggle-status', $this->operator));
     $response->assertRedirect();
-    
+
     $this->operator->refresh();
     expect($this->operator->is_active)->toBeFalse();
 
     // Toggle to true
     $response = $this->post(route('users.toggle-status', $this->operator));
     $response->assertRedirect();
-    
+
     $this->operator->refresh();
     expect($this->operator->is_active)->toBeTrue();
 });
@@ -83,7 +85,7 @@ test('admin cannot delete system roles', function () {
 
     $adminRole = Role::where('name', 'admin')->first();
     $response = $this->delete(route('roles.destroy', $adminRole));
-    
+
     $response->assertSessionHasErrors('error');
     expect(Role::where('name', 'admin')->exists())->toBeTrue();
 });
@@ -91,8 +93,8 @@ test('admin cannot delete system roles', function () {
 test('admin can update item alerts and stock overrides', function () {
     $this->actingAs($this->admin);
 
-    $item = \App\Models\Item::first();
-    $warehouse = \App\Models\Warehouse::first();
+    $item = Item::first();
+    $warehouse = Warehouse::first();
 
     $response = $this->post(route('items.alerts.update', $item), [
         'warehouse_id' => $warehouse->id,
@@ -101,8 +103,8 @@ test('admin can update item alerts and stock overrides', function () {
     ]);
 
     $response->assertRedirect();
-    
-    $stock = \App\Models\Stock::where('item_id', $item->id)
+
+    $stock = Stock::where('item_id', $item->id)
         ->where('warehouse_id', $warehouse->id)
         ->first();
 
@@ -129,7 +131,7 @@ test('admin can access items index with server side pagination and filtering', f
     $response->assertOk();
     $items = $response->original->getData()['page']['props']['items']['data'];
     foreach ($items as $item) {
-        expect(strtolower($item['name']) . strtolower($item['sku']))->toContain('portable');
+        expect(strtolower($item['name']).strtolower($item['sku']))->toContain('portable');
     }
 
     // Verify category filter
@@ -162,6 +164,3 @@ test('admin can access movements index with server side pagination', function ()
         ->has('items')
     );
 });
-
-
-

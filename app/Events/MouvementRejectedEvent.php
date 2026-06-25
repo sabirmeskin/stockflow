@@ -3,6 +3,7 @@
 namespace App\Events;
 
 use App\Models\StockMovement;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -21,7 +22,7 @@ class MouvementRejectedEvent implements ShouldBroadcast
         $this->data = [
             'type' => 'mouvement_rejected',
             'title' => 'Mouvement rejeté',
-            'message' => "Votre mouvement {$movement->type} de {$movement->quantity} unités pour {$movement->item->name} a été rejeté" .
+            'message' => "Votre mouvement {$movement->type} de {$movement->quantity} unités pour {$movement->item->name} a été rejeté".
                 ($movement->rejection_reason ? " — Raison : {$movement->rejection_reason}" : ''),
             'movement_id' => $movement->id,
             'movement_type' => $movement->type,
@@ -35,7 +36,7 @@ class MouvementRejectedEvent implements ShouldBroadcast
     /**
      * Broadcast only to the operator who created the movement.
      *
-     * @return array<int, \Illuminate\Broadcasting\Channel>
+     * @return array<int, Channel>
      */
     public function broadcastOn(): array
     {

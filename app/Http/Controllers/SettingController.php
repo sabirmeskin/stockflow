@@ -43,7 +43,7 @@ class SettingController extends Controller
             SystemSetting::set($key, $value);
         }
 
-        AuditLogger::log('UPDATE_SETTINGS', "Mise à jour des paramètres système");
+        AuditLogger::log('UPDATE_SETTINGS', 'Mise à jour des paramètres système');
 
         return redirect()->back()->with('success', 'Configuration mise à jour avec succès.');
     }

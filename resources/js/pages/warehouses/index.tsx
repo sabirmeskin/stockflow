@@ -31,8 +31,25 @@ interface WarehouseData {
     occupancy_rate: number;
 }
 
+interface PaginationLink {
+    url: string | null;
+    label: string;
+    active: boolean;
+}
+
+interface PaginatedWarehouses {
+    data: WarehouseData[];
+    links: PaginationLink[];
+    current_page: number;
+    last_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+    per_page: number;
+}
+
 interface Props {
-    warehouses: WarehouseData[];
+    warehouses: PaginatedWarehouses;
     canManage: boolean;
 }
 
@@ -120,7 +137,7 @@ export default function WarehousesIndex({ warehouses, canManage }: Props) {
 
                 {/* Warehouses Grid */}
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {warehouses.length === 0 ? (
+                    {warehouses.data.length === 0 ? (
                         <Card className="col-span-full border border-dashed border-neutral-300 dark:border-neutral-800 flex flex-col items-center justify-center p-12 text-center">
                             <WarehouseIcon className="h-12 w-12 text-neutral-400 mb-4" />
                             <h3 className="text-lg font-semibold">Aucun entrepôt disponible</h3>
@@ -134,7 +151,7 @@ export default function WarehousesIndex({ warehouses, canManage }: Props) {
                             )}
                         </Card>
                     ) : (
-                        warehouses.map((w) => (
+                        warehouses.data.map((w) => (
                             <Card 
                                 key={w.id} 
                                 onClick={() => router.get(`/warehouses/${w.id}`)}
@@ -217,6 +234,48 @@ export default function WarehousesIndex({ warehouses, canManage }: Props) {
                         ))
                     )}
                 </div>
+
+                {/* Pagination Controls */}
+                {warehouses.last_page > 1 && (
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border border-neutral-200 dark:border-neutral-800 rounded-xl p-4 bg-white dark:bg-neutral-900/10 shadow-sm">
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                            Affichage de <span className="font-semibold text-neutral-700 dark:text-neutral-200">{warehouses.from || 0}</span> à <span className="font-semibold text-neutral-700 dark:text-neutral-200">{warehouses.to || 0}</span> sur <span className="font-semibold text-neutral-700 dark:text-neutral-200">{warehouses.total}</span> entrepôts
+                        </p>
+                        <div className="flex items-center gap-1 flex-wrap">
+                            {warehouses.links.map((link, idx) => {
+                                let label = link.label;
+                                if (label.includes('Previous') || label.includes('Précédent') || label.includes('&laquo;')) {
+                                    label = '← Précédent';
+                                } else if (label.includes('Next') || label.includes('Suivant') || label.includes('&raquo;')) {
+                                    label = 'Suivant →';
+                                }
+
+                                return (
+                                    <button
+                                        key={idx}
+                                        onClick={() => {
+                                            if (link.url) {
+                                                router.get(link.url, {}, {
+                                                    preserveState: true,
+                                                });
+                                            }
+                                        }}
+                                        disabled={!link.url}
+                                        className={`inline-flex items-center justify-center rounded-md text-xs font-medium h-8 px-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+                                            ${link.active
+                                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                                : 'border border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-sm'
+                                            }
+                                            ${!link.url ? 'pointer-events-none opacity-50' : ''}
+                                        `}
+                                    >
+                                        {label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
 
                 {/* Add Dialog */}
                 <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>

@@ -8,10 +8,10 @@ use App\Events\MouvementRejectedEvent;
 use App\Events\MouvementValidatedEvent;
 use App\Events\RuptureStockEvent;
 use App\Models\Item;
-use App\Models\User;
-use App\Models\Warehouse;
 use App\Models\Stock;
 use App\Models\StockMovement;
+use App\Models\User;
+use App\Models\Warehouse;
 use App\Notifications\StockNotification;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
@@ -62,20 +62,22 @@ class StockMovementController extends Controller
         $movements = StockMovement::with(['item', 'sourceWarehouse', 'destinationWarehouse', 'creator'])
             ->where('status', 'pending')
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($mov) {
-                return [
-                    'id' => $mov->id,
-                    'type' => $mov->type,
-                    'item' => $mov->item,
-                    'source_warehouse' => $mov->sourceWarehouse,
-                    'destination_warehouse' => $mov->destinationWarehouse,
-                    'quantity' => $mov->quantity,
-                    'creator' => $mov->creator,
-                    'status' => $mov->status,
-                    'created_at' => $mov->created_at,
-                ];
-            });
+            ->paginate(10)
+            ->withQueryString();
+
+        $movements->through(function ($mov) {
+            return [
+                'id' => $mov->id,
+                'type' => $mov->type,
+                'item' => $mov->item,
+                'source_warehouse' => $mov->sourceWarehouse,
+                'destination_warehouse' => $mov->destinationWarehouse,
+                'quantity' => $mov->quantity,
+                'creator' => $mov->creator,
+                'status' => $mov->status,
+                'created_at' => $mov->created_at,
+            ];
+        });
 
         return Inertia::render('movements/pending', [
             'movements' => $movements,
@@ -102,8 +104,8 @@ class StockMovementController extends Controller
 
         if ($type === 'OUT' || $type === 'TRANSFER') {
             $stock = Stock::where('warehouse_id', $sourceId)->where('item_id', $itemId)->first();
-            if (!$stock || $stock->quantity < $qty) {
-                return redirect()->back()->withErrors(['quantity' => 'Stock insuffisant dans l\'entrepôt source. Quantité disponible : ' . ($stock ? $stock->quantity : 0)]);
+            if (! $stock || $stock->quantity < $qty) {
+                return redirect()->back()->withErrors(['quantity' => 'Stock insuffisant dans l\'entrepôt source. Quantité disponible : '.($stock ? $stock->quantity : 0)]);
             }
         }
 
@@ -155,7 +157,7 @@ class StockMovementController extends Controller
 
         if ($movement->type === 'OUT' || $movement->type === 'TRANSFER') {
             $stock = Stock::where('warehouse_id', $movement->source_warehouse_id)->where('item_id', $movement->item_id)->first();
-            if (!$stock || $stock->quantity < $movement->quantity) {
+            if (! $stock || $stock->quantity < $movement->quantity) {
                 $movement->update([
                     'status' => 'rejected',
                     'validated_by' => auth()->id(),
@@ -281,7 +283,7 @@ class StockMovementController extends Controller
         $item = $stock->item;
         $warehouse = $stock->warehouse;
 
-        if (!$item || !$warehouse) {
+        if (! $item || ! $warehouse) {
             return;
         }
 

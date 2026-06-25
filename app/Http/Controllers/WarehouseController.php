@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Item;
 use App\Models\Warehouse;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
@@ -14,7 +16,11 @@ class WarehouseController extends Controller
     {
         Gate::authorize('read_warehouses');
 
-        $warehouses = Warehouse::with('stocks.item')->get()->map(function ($warehouse) {
+        $warehouses = Warehouse::with('stocks.item')
+            ->paginate(9)
+            ->withQueryString();
+
+        $warehouses->through(function ($warehouse) {
             $currentStock = $warehouse->stocks->sum('quantity');
             $occupancyRate = $warehouse->capacity > 0 ? round(($currentStock / $warehouse->capacity) * 100, 2) : 0;
 
@@ -38,17 +44,17 @@ class WarehouseController extends Controller
     {
         Gate::authorize('read_warehouses');
 
-        $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
+        $driver = DB::connection()->getDriverName();
         $likeOperator = $driver === 'sqlite' ? 'like' : 'ilike';
 
-        $query = \App\Models\Item::query();
+        $query = Item::query();
 
         // 1. Filter by Search Query (SKU or Name)
-        if ($request->has('search') && !empty($request->search)) {
+        if ($request->has('search') && ! empty($request->search)) {
             $search = $request->search;
             $query->where(function ($q) use ($search, $likeOperator) {
-                $q->where('name', $likeOperator, '%' . $search . '%')
-                  ->orWhere('sku', $likeOperator, '%' . $search . '%');
+                $q->where('name', $likeOperator, '%'.$search.'%')
+                    ->orWhere('sku', $likeOperator, '%'.$search.'%');
             });
         }
 
@@ -63,13 +69,13 @@ class WarehouseController extends Controller
             if ($alert === 'LOW') {
                 $query->where(function ($q) use ($warehouse) {
                     $q->whereExists(function ($sub) use ($warehouse) {
-                        $sub->select(\Illuminate\Support\Facades\DB::raw(1))
+                        $sub->select(DB::raw(1))
                             ->from('stocks')
                             ->whereColumn('stocks.item_id', 'items.id')
                             ->where('stocks.warehouse_id', $warehouse->id)
                             ->whereRaw('stocks.quantity <= COALESCE(stocks.min_stock_override, items.min_stock)');
                     })->orWhereNotExists(function ($sub) use ($warehouse) {
-                        $sub->select(\Illuminate\Support\Facades\DB::raw(1))
+                        $sub->select(DB::raw(1))
                             ->from('stocks')
                             ->whereColumn('stocks.item_id', 'items.id')
                             ->where('stocks.warehouse_id', $warehouse->id);
@@ -77,7 +83,7 @@ class WarehouseController extends Controller
                 });
             } elseif ($alert === 'OK') {
                 $query->whereExists(function ($sub) use ($warehouse) {
-                    $sub->select(\Illuminate\Support\Facades\DB::raw(1))
+                    $sub->select(DB::raw(1))
                         ->from('stocks')
                         ->whereColumn('stocks.item_id', 'items.id')
                         ->where('stocks.warehouse_id', $warehouse->id)
@@ -96,7 +102,7 @@ class WarehouseController extends Controller
             $localStock = $item->stocks->firstWhere('warehouse_id', $warehouse->id);
             $localQuantity = $localStock ? $localStock->quantity : 0;
             $localMinStockOverride = $localStock ? $localStock->min_stock_override : null;
-            
+
             $threshold = $localMinStockOverride !== null ? $localMinStockOverride : $item->min_stock;
             $isLowStock = $localQuantity <= $threshold;
 
@@ -122,7 +128,7 @@ class WarehouseController extends Controller
             ];
         });
 
-        $categories = \App\Models\Item::distinct()->pluck('category')->toArray();
+        $categories = Item::distinct()->pluck('category')->toArray();
 
         // Calculate warehouse details
         $currentStock = $warehouse->stocks()->sum('quantity');
@@ -173,7 +179,7 @@ class WarehouseController extends Controller
         Gate::authorize('manage_warehouses');
 
         $request->validate([
-            'name' => 'required|string|max:255|unique:warehouses,name,' . $warehouse->id,
+            'name' => 'required|string|max:255|unique:warehouses,name,'.$warehouse->id,
             'address' => 'nullable|string|max:255',
             'capacity' => 'required|integer|min:1',
         ]);

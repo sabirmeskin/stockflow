@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\StockExport;
 use App\Exports\MovementExport;
+use App\Exports\StockExport;
 use App\Models\Stock;
 use App\Models\StockMovement;
 use App\Models\SystemSetting;
@@ -18,14 +18,16 @@ class ReportController extends Controller
     {
         Gate::authorize('export_reports');
         AuditLogger::log('EXPORT_EXCEL_STOCK', 'Export Excel de l\'état des stocks');
-        return Excel::download(new StockExport, 'stocks_' . date('Ymd_His') . '.xlsx');
+
+        return Excel::download(new StockExport, 'stocks_'.date('Ymd_His').'.xlsx');
     }
 
     public function exportMovementExcel()
     {
         Gate::authorize('export_reports');
         AuditLogger::log('EXPORT_EXCEL_MOVEMENTS', 'Export Excel de l\'historique des mouvements');
-        return Excel::download(new MovementExport, 'movements_' . date('Ymd_His') . '.xlsx');
+
+        return Excel::download(new MovementExport, 'movements_'.date('Ymd_His').'.xlsx');
     }
 
     public function exportStockPdf()
@@ -46,7 +48,7 @@ class ReportController extends Controller
 
         AuditLogger::log('EXPORT_PDF_STOCK', 'Export PDF de l\'état des stocks');
 
-        return $pdf->download('rapport_stocks_' . date('Ymd_His') . '.pdf');
+        return $pdf->download('rapport_stocks_'.date('Ymd_His').'.pdf');
     }
 
     public function exportMovementPdf()
@@ -56,7 +58,7 @@ class ReportController extends Controller
         $movements = StockMovement::with(['item', 'sourceWarehouse', 'destinationWarehouse', 'creator'])
             ->orderBy('created_at', 'desc')
             ->get();
-        
+
         $companyName = SystemSetting::get('company_name', 'StockFlow Logistics');
         $companyAddress = SystemSetting::get('company_address', '');
         $companyEmail = SystemSetting::get('company_email', '');
@@ -70,6 +72,6 @@ class ReportController extends Controller
 
         AuditLogger::log('EXPORT_PDF_MOVEMENTS', 'Export PDF de l\'historique des mouvements');
 
-        return $pdf->download('rapport_mouvements_' . date('Ymd_His') . '.pdf');
+        return $pdf->download('rapport_mouvements_'.date('Ymd_His').'.pdf');
     }
 }

@@ -11,11 +11,26 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         Gate::authorize('manage_users');
 
-        $users = User::with('roles')->get()->map(function ($user) {
+        $driver = \DB::connection()->getDriverName();
+        $likeOperator = $driver === 'sqlite' ? 'like' : 'ilike';
+
+        $query = User::query()->with('roles');
+
+        if ($request->has('search') && ! empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search, $likeOperator) {
+                $q->where('name', $likeOperator, '%'.$search.'%')
+                    ->orWhere('email', $likeOperator, '%'.$search.'%');
+            });
+        }
+
+        $users = $query->paginate(10)->withQueryString();
+
+        $users->through(function ($user) {
             return [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -31,6 +46,9 @@ class UserController extends Controller
         return Inertia::render('users/index', [
             'users' => $users,
             'roles' => $roles,
+            'filters' => [
+                'search' => $request->search ?? '',
+            ],
         ]);
     }
 
@@ -65,7 +83,7 @@ class UserController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
             'password' => 'nullable|string|min:8',
             'role' => 'required|string|exists:roles,name',
         ]);
@@ -112,7 +130,7 @@ class UserController extends Controller
             return redirect()->back()->withErrors(['error' => 'Vous ne pouvez pas activer ou désactiver votre propre compte.']);
         }
 
-        $user->is_active = !$user->is_active;
+        $user->is_active = ! $user->is_active;
         $user->save();
 
         $statusStr = $user->is_active ? 'activé' : 'désactivé';

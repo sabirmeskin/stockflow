@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Item;
-use App\Models\Warehouse;
 use App\Models\Stock;
+use App\Models\Warehouse;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -22,11 +22,11 @@ class ItemController extends Controller
         $query = Item::query();
 
         // 1. Filter by Search Query (SKU or Name)
-        if ($request->has('search') && !empty($request->search)) {
+        if ($request->has('search') && ! empty($request->search)) {
             $search = $request->search;
             $query->where(function ($q) use ($search, $likeOperator) {
-                $q->where('name', $likeOperator, '%' . $search . '%')
-                  ->orWhere('sku', $likeOperator, '%' . $search . '%');
+                $q->where('name', $likeOperator, '%'.$search.'%')
+                    ->orWhere('sku', $likeOperator, '%'.$search.'%');
             });
         }
 
@@ -41,16 +41,16 @@ class ItemController extends Controller
             if ($alert === 'LOW') {
                 $query->whereExists(function ($q) {
                     $q->select(\DB::raw(1))
-                      ->from('stocks')
-                      ->whereColumn('stocks.item_id', 'items.id')
-                      ->whereRaw('stocks.quantity <= COALESCE(stocks.min_stock_override, items.min_stock)');
+                        ->from('stocks')
+                        ->whereColumn('stocks.item_id', 'items.id')
+                        ->whereRaw('stocks.quantity <= COALESCE(stocks.min_stock_override, items.min_stock)');
                 });
             } elseif ($alert === 'OK') {
                 $query->whereNotExists(function ($q) {
                     $q->select(\DB::raw(1))
-                      ->from('stocks')
-                      ->whereColumn('stocks.item_id', 'items.id')
-                      ->whereRaw('stocks.quantity <= COALESCE(stocks.min_stock_override, items.min_stock)');
+                        ->from('stocks')
+                        ->whereColumn('stocks.item_id', 'items.id')
+                        ->whereRaw('stocks.quantity <= COALESCE(stocks.min_stock_override, items.min_stock)');
                 });
             }
         }
@@ -63,7 +63,7 @@ class ItemController extends Controller
 
         $items->through(function ($item) {
             $totalStock = $item->stocks->sum('quantity');
-            
+
             $isLowStock = false;
             $alertWarehouses = [];
 
@@ -141,7 +141,7 @@ class ItemController extends Controller
         Gate::authorize('manage_items');
 
         $request->validate([
-            'sku' => 'required|string|unique:items,sku,' . $item->id . '|max:50',
+            'sku' => 'required|string|unique:items,sku,'.$item->id.'|max:50',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'category' => 'required|string|max:100',

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Warehouse;
 use App\Models\Item;
 use App\Models\Stock;
 use App\Models\StockMovement;
+use App\Models\Warehouse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
@@ -31,8 +31,10 @@ class DashboardController extends Controller
 
         foreach ($stocks as $stock) {
             $item = $stock->item;
-            if (!$item) continue;
-            
+            if (! $item) {
+                continue;
+            }
+
             $threshold = $stock->min_stock_override !== null ? $stock->min_stock_override : $item->min_stock;
             if ($stock->quantity <= $threshold) {
                 $activeAlertsCount++;
@@ -49,6 +51,7 @@ class DashboardController extends Controller
         $warehousesOccupancy = Warehouse::with('stocks')->get()->map(function ($w) {
             $currentStock = $w->stocks->sum('quantity');
             $rate = $w->capacity > 0 ? round(($currentStock / $w->capacity) * 100, 2) : 0;
+
             return [
                 'name' => $w->name,
                 'current_stock' => $currentStock,
@@ -85,7 +88,7 @@ class DashboardController extends Controller
         $items = Item::with('stocks')->get();
         foreach ($items as $item) {
             $cat = $item->category ?: 'Autre';
-            if (!isset($categoryStats[$cat])) {
+            if (! isset($categoryStats[$cat])) {
                 $categoryStats[$cat] = 0;
             }
             $categoryStats[$cat] += $item->stocks->sum('quantity');

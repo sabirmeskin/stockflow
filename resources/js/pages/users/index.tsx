@@ -27,6 +27,8 @@ import {
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
+import { useEffect } from 'react';
+
 interface UserAccount {
     id: number;
     name: string;
@@ -36,9 +38,29 @@ interface UserAccount {
     created_at: string;
 }
 
+interface PaginationLink {
+    url: string | null;
+    label: string;
+    active: boolean;
+}
+
+interface PaginatedUsers {
+    data: UserAccount[];
+    links: PaginationLink[];
+    current_page: number;
+    last_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+    per_page: number;
+}
+
 interface Props {
-    users: UserAccount[];
+    users: PaginatedUsers;
     roles: string[];
+    filters: {
+        search: string;
+    };
     auth: {
         user: {
             id: number;
@@ -46,8 +68,8 @@ interface Props {
     };
 }
 
-export default function UsersIndex({ users, roles, auth }: Props) {
-    const [search, setSearch] = useState('');
+export default function UsersIndex({ users, roles, filters, auth }: Props) {
+    const [search, setSearch] = useState(filters.search || '');
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<UserAccount | null>(null);
@@ -59,10 +81,23 @@ export default function UsersIndex({ users, roles, auth }: Props) {
         role: 'operator',
     });
 
-    const filteredUsers = users.filter(user => {
-        return user.name.toLowerCase().includes(search.toLowerCase()) || 
-               user.email.toLowerCase().includes(search.toLowerCase());
-    });
+    // Debounced search
+    useEffect(() => {
+        if (search === (filters.search || '')) return;
+
+        const timer = setTimeout(() => {
+            router.get('/users', {
+                search: search,
+            }, {
+                preserveState: true,
+                replace: true,
+            });
+        }, 350);
+
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    const filteredUsers = users.data;
 
     const handleAddOpen = () => {
         form.reset();
@@ -235,6 +270,47 @@ export default function UsersIndex({ users, roles, auth }: Props) {
                             </tbody>
                         </table>
                     </div>
+                    {/* Pagination Controls */}
+                    {users.last_page > 1 && (
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-t border-neutral-200 dark:border-neutral-800 p-4 bg-neutral-50/50 dark:bg-neutral-900/50">
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                Affichage de <span className="font-semibold text-neutral-700 dark:text-neutral-200">{users.from || 0}</span> à <span className="font-semibold text-neutral-700 dark:text-neutral-200">{users.to || 0}</span> sur <span className="font-semibold text-neutral-700 dark:text-neutral-200">{users.total}</span> utilisateurs
+                            </p>
+                            <div className="flex items-center gap-1 flex-wrap">
+                                {users.links.map((link, idx) => {
+                                    let label = link.label;
+                                    if (label.includes('Previous') || label.includes('Précédent') || label.includes('&laquo;')) {
+                                        label = '← Précédent';
+                                    } else if (label.includes('Next') || label.includes('Suivant') || label.includes('&raquo;')) {
+                                        label = 'Suivant →';
+                                    }
+
+                                    return (
+                                        <button
+                                            key={idx}
+                                            onClick={() => {
+                                                if (link.url) {
+                                                    router.get(link.url, {}, {
+                                                        preserveState: true,
+                                                    });
+                                                }
+                                            }}
+                                            disabled={!link.url}
+                                            className={`inline-flex items-center justify-center rounded-md text-xs font-medium h-8 px-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+                                                ${link.active
+                                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                                    : 'border border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-sm'
+                                                }
+                                                ${!link.url ? 'pointer-events-none opacity-50' : ''}
+                                            `}
+                                        >
+                                            {label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Add Dialog */}

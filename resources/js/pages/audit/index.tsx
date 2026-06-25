@@ -14,19 +14,63 @@ interface LogData {
     created_at: string;
 }
 
-interface Props {
-    logs: LogData[];
+import { useEffect } from 'react';
+import { router } from '@inertiajs/react';
+
+interface LogData {
+    id: number;
+    user_name: string;
+    user_email: string;
+    action: string;
+    description: string;
+    ip_address: string | null;
+    created_at: string;
 }
 
-export default function AuditLogsIndex({ logs }: Props) {
-    const [search, setSearch] = useState('');
+interface PaginationLink {
+    url: string | null;
+    label: string;
+    active: boolean;
+}
 
-    const filteredLogs = logs.filter(log => {
-        return log.action.toLowerCase().includes(search.toLowerCase()) || 
-               log.description.toLowerCase().includes(search.toLowerCase()) ||
-               log.user_name.toLowerCase().includes(search.toLowerCase()) ||
-               log.user_email.toLowerCase().includes(search.toLowerCase());
-    });
+interface PaginatedLogs {
+    data: LogData[];
+    links: PaginationLink[];
+    current_page: number;
+    last_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+    per_page: number;
+}
+
+interface Props {
+    logs: PaginatedLogs;
+    filters: {
+        search: string;
+    };
+}
+
+export default function AuditLogsIndex({ logs, filters }: Props) {
+    const [search, setSearch] = useState(filters.search || '');
+
+    // Debounced search
+    useEffect(() => {
+        if (search === (filters.search || '')) return;
+
+        const timer = setTimeout(() => {
+            router.get('/audit-logs', {
+                search: search,
+            }, {
+                preserveState: true,
+                replace: true,
+            });
+        }, 350);
+
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    const filteredLogs = logs.data;
 
     const getActionBadge = (action: string) => {
         if (action.includes('CREATE')) {
@@ -126,6 +170,47 @@ export default function AuditLogsIndex({ logs }: Props) {
                             </tbody>
                         </table>
                     </div>
+                    {/* Pagination Controls */}
+                    {logs.last_page > 1 && (
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-t border-neutral-200 dark:border-neutral-800 p-4 bg-neutral-50/50 dark:bg-neutral-900/50">
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                Affichage de <span className="font-semibold text-neutral-700 dark:text-neutral-200">{logs.from || 0}</span> à <span className="font-semibold text-neutral-700 dark:text-neutral-200">{logs.to || 0}</span> sur <span className="font-semibold text-neutral-700 dark:text-neutral-200">{logs.total}</span> logs
+                            </p>
+                            <div className="flex items-center gap-1 flex-wrap">
+                                {logs.links.map((link, idx) => {
+                                    let label = link.label;
+                                    if (label.includes('Previous') || label.includes('Précédent') || label.includes('&laquo;')) {
+                                        label = '← Précédent';
+                                    } else if (label.includes('Next') || label.includes('Suivant') || label.includes('&raquo;')) {
+                                        label = 'Suivant →';
+                                    }
+
+                                    return (
+                                        <button
+                                            key={idx}
+                                            onClick={() => {
+                                                if (link.url) {
+                                                    router.get(link.url, {}, {
+                                                        preserveState: true,
+                                                    });
+                                                }
+                                            }}
+                                            disabled={!link.url}
+                                            className={`inline-flex items-center justify-center rounded-md text-xs font-medium h-8 px-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+                                                ${link.active
+                                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                                    : 'border border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-sm'
+                                                }
+                                                ${!link.url ? 'pointer-events-none opacity-50' : ''}
+                                            `}
+                                        >
+                                            {label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
             </div>

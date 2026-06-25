@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\StockMovement;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -50,7 +51,7 @@ class HandleInertiaRequests extends Middleware
                 'error' => $request->session()->get('error') ?: $request->session()->get('errors')?->first(),
             ],
             'pendingMovementsCount' => $request->user() && $request->user()->hasRole('admin')
-                ? \App\Models\StockMovement::where('status', 'pending')->count()
+                ? StockMovement::where('status', 'pending')->count()
                 : 0,
             'unreadNotificationsCount' => $request->user()
                 ? $request->user()->unreadNotifications()->count()
