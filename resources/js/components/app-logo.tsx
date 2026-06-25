@@ -11,7 +11,7 @@ export default function AppLogo() {
                     StockFlow
                 </span>
                 <span className="text-[10px] text-neutral-400 font-medium leading-none">
-                    Warehouse Management
+                    Gestion de Stocks
                 </span>
             </div>
         </>

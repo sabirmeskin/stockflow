@@ -50,7 +50,7 @@ export function AppSidebar() {
 
     const mainNavItems = [
         {
-            title: 'Dashboard',
+            title: 'Tableau de Bord',
             href: '/dashboard',
             icon: LayoutGrid,
             show: hasPermission('view_dashboard'),
