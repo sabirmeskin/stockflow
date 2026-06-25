@@ -1,4 +1,4 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { 
     Warehouse as WarehouseIcon, 
@@ -135,7 +135,11 @@ export default function WarehousesIndex({ warehouses, canManage }: Props) {
                         </Card>
                     ) : (
                         warehouses.map((w) => (
-                            <Card key={w.id} className="border border-neutral-200/60 dark:border-neutral-800 flex flex-col justify-between">
+                            <Card 
+                                key={w.id} 
+                                onClick={() => router.get(`/warehouses/${w.id}`)}
+                                className="border border-neutral-200/60 dark:border-neutral-800 flex flex-col justify-between cursor-pointer hover:border-neutral-400 dark:hover:border-neutral-700 hover:shadow-md hover:bg-neutral-50/5 dark:hover:bg-neutral-900/5 transition-all duration-300"
+                            >
                                 <CardHeader className="pb-3">
                                     <div className="flex items-start justify-between">
                                         <div className="space-y-1">
@@ -153,7 +157,10 @@ export default function WarehousesIndex({ warehouses, canManage }: Props) {
                                                 <Button 
                                                     variant="ghost" 
                                                     size="icon" 
-                                                    onClick={() => handleEditOpen(w)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleEditOpen(w);
+                                                    }}
                                                     className="h-8 w-8"
                                                 >
                                                     <Edit2 className="h-3.5 w-3.5" />
@@ -161,7 +168,10 @@ export default function WarehousesIndex({ warehouses, canManage }: Props) {
                                                 <Button 
                                                     variant="ghost" 
                                                     size="icon" 
-                                                    onClick={() => handleDelete(w)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDelete(w);
+                                                    }}
                                                     className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20"
                                                 >
                                                     <Trash2 className="h-3.5 w-3.5" />

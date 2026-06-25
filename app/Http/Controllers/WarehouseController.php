@@ -34,6 +34,123 @@ class WarehouseController extends Controller
         ]);
     }
 
+    public function show(Warehouse $warehouse, Request $request)
+    {
+        Gate::authorize('read_warehouses');
+
+        $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
+        $likeOperator = $driver === 'sqlite' ? 'like' : 'ilike';
+
+        $query = \App\Models\Item::query();
+
+        // 1. Filter by Search Query (SKU or Name)
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search, $likeOperator) {
+                $q->where('name', $likeOperator, '%' . $search . '%')
+                  ->orWhere('sku', $likeOperator, '%' . $search . '%');
+            });
+        }
+
+        // 2. Filter by Category
+        if ($request->has('category') && $request->category !== 'ALL') {
+            $query->where('category', $request->category);
+        }
+
+        // 3. Filter by Alert Status for this warehouse
+        if ($request->has('alert') && $request->alert !== 'ALL') {
+            $alert = $request->alert;
+            if ($alert === 'LOW') {
+                $query->where(function ($q) use ($warehouse) {
+                    $q->whereExists(function ($sub) use ($warehouse) {
+                        $sub->select(\Illuminate\Support\Facades\DB::raw(1))
+                            ->from('stocks')
+                            ->whereColumn('stocks.item_id', 'items.id')
+                            ->where('stocks.warehouse_id', $warehouse->id)
+                            ->whereRaw('stocks.quantity <= COALESCE(stocks.min_stock_override, items.min_stock)');
+                    })->orWhereNotExists(function ($sub) use ($warehouse) {
+                        $sub->select(\Illuminate\Support\Facades\DB::raw(1))
+                            ->from('stocks')
+                            ->whereColumn('stocks.item_id', 'items.id')
+                            ->where('stocks.warehouse_id', $warehouse->id);
+                    });
+                });
+            } elseif ($alert === 'OK') {
+                $query->whereExists(function ($sub) use ($warehouse) {
+                    $sub->select(\Illuminate\Support\Facades\DB::raw(1))
+                        ->from('stocks')
+                        ->whereColumn('stocks.item_id', 'items.id')
+                        ->where('stocks.warehouse_id', $warehouse->id)
+                        ->whereRaw('stocks.quantity > COALESCE(stocks.min_stock_override, items.min_stock)');
+                });
+            }
+        }
+
+        // 4. Paginate items
+        $items = $query->with('stocks.warehouse')
+            ->orderBy('sku', 'asc')
+            ->paginate(10)
+            ->withQueryString();
+
+        $items->through(function ($item) use ($warehouse) {
+            $localStock = $item->stocks->firstWhere('warehouse_id', $warehouse->id);
+            $localQuantity = $localStock ? $localStock->quantity : 0;
+            $localMinStockOverride = $localStock ? $localStock->min_stock_override : null;
+            
+            $threshold = $localMinStockOverride !== null ? $localMinStockOverride : $item->min_stock;
+            $isLowStock = $localQuantity <= $threshold;
+
+            return [
+                'id' => $item->id,
+                'sku' => $item->sku,
+                'name' => $item->name,
+                'description' => $item->description,
+                'category' => $item->category,
+                'price' => $item->price,
+                'min_stock' => $item->min_stock,
+                'warehouse_quantity' => $localQuantity,
+                'warehouse_min_stock_override' => $localMinStockOverride,
+                'is_low_stock' => $isLowStock,
+                'stocks' => $item->stocks->map(function ($stock) {
+                    return [
+                        'warehouse_id' => $stock->warehouse_id,
+                        'warehouse_name' => $stock->warehouse->name,
+                        'quantity' => $stock->quantity,
+                        'min_stock_override' => $stock->min_stock_override,
+                    ];
+                }),
+            ];
+        });
+
+        $categories = \App\Models\Item::distinct()->pluck('category')->toArray();
+
+        // Calculate warehouse details
+        $currentStock = $warehouse->stocks()->sum('quantity');
+        $occupancyRate = $warehouse->capacity > 0 ? round(($currentStock / $warehouse->capacity) * 100, 2) : 0;
+
+        $warehouseData = [
+            'id' => $warehouse->id,
+            'name' => $warehouse->name,
+            'address' => $warehouse->address,
+            'capacity' => $warehouse->capacity,
+            'current_stock' => $currentStock,
+            'occupancy_rate' => $occupancyRate,
+        ];
+
+        return Inertia::render('warehouses/show', [
+            'warehouse' => $warehouseData,
+            'items' => $items,
+            'categories' => $categories,
+            'canManage' => auth()->user()->can('manage_items'),
+            'canManageAlerts' => auth()->user()->can('manage_alerts'),
+            'filters' => [
+                'search' => $request->search ?? '',
+                'category' => $request->category ?? 'ALL',
+                'alert' => $request->alert ?? 'ALL',
+            ],
+        ]);
+    }
+
     public function store(Request $request)
     {
         Gate::authorize('manage_warehouses');
